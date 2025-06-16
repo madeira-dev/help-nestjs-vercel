@@ -16,7 +16,7 @@ export class AuthController {
 
     // This endpoint will be called by NextAuth.js's authorize function.
     // It needs to validate credentials AND establish a session via req.login().
-    @Post('login') // Renaming for clarity, update in NextAuth.js authorize too
+    @Post('login')
     @HttpCode(HttpStatus.OK)
     async login(@Body() loginUserDto: LoginUserDto, @Req() req: Request, @Res({ passthrough: true }) response: Response) {
         console.log('[Backend /auth/login] Attempting login for:', loginUserDto.email);

@@ -1,11 +1,3 @@
-// import { NestFactory } from '@nestjs/core';
-// import { AppModule } from './app.module';
-
-// async function bootstrap() {
-//   const app = await NestFactory.create(AppModule);
-//   await app.listen(process.env.PORT ?? 3000);
-// }
-// bootstrap();
 import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import session from 'express-session';
@@ -89,7 +81,6 @@ export default async (req: Request, res: Response) => {
     server(req, res);
 };
 
-// For local development (not using `vercel dev`)
 async function localDevelopment() {
     console.log('[Backend] main.ts execution started for local development');
     const server = await bootstrap(); // This is the expressApp
