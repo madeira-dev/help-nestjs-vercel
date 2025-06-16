@@ -18,7 +18,7 @@ async function bootstrap() {
 
     const frontendUrl = process.env.FRONTEND_URL;
     console.log(`[Backend] Configuring CORS for origin: ${frontendUrl}`);
-    const allowedOrigins = [frontendUrl, 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+    const allowedOrigins = ['https://paggo-ocr-case-ochre.vercel.app', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
     if (process.env.FRONTEND_URL) {
         allowedOrigins.push(process.env.FRONTEND_URL);
     }
@@ -87,7 +87,7 @@ async function localDevelopment() {
     const port = process.env.PORT || 3000;
     server.listen(port, () => {
         console.log(`[Backend] Local development: Application is running on: http://localhost:${port}`);
-        console.log(`[Backend] Try accessing http://localhost:${port}/api`);
+        console.log(`[Backend] Try accessing http://localhost:${port}/`);
     });
 }
 
