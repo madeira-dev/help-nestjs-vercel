@@ -69,6 +69,8 @@ async function bootstrap() {
     );
     console.log('[Backend] Global validation pipe set.');
 
+    await app.init()
+
     cachedServer = expressApp;
     console.log('[Backend] Nest application initialized and configured.');
     return cachedServer;
