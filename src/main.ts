@@ -23,7 +23,7 @@ async function bootstrap() {
     // --- Session Store Configuration (PostgreSQL) ---
     const PgSessionStore = connectPgSimple(session);
     const pool = new Pool({
-        connectionString: process.env.DATABASE_URL, // Ensure DATABASE_URL is set
+        connectionString: process.env.DATABASE_ANY_CLIENT_CONNECTION_URL, // Ensure DATABASE_URL is set
         // You can add more pool options here if needed, e.g., ssl for production
         ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false,
     });
