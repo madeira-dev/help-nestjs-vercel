@@ -14,12 +14,17 @@ import { ChatMessageDto } from './dto/chat-message.dto';
 import { CompiledDocumentDto, ChatHistoryItemDto } from './dto/compiled-document.dto';
 import { DocumentItemDto } from './dto/document-item.dto';
 import { Message as PrismaMessage, MessageSender, CompiledDocument as PrismaCompiledDocument, Chat as PrismaChat, Message } from '../../generated/prisma';
+import { PdfGenerationService, CompiledPdfData, ChatHistoryPdfItem } from '../pdf/pdf-generation.service'; // Import PDF Generation Service and types
+import { OcrService } from '../ocr/ocr.service'; // Import OCR Service
 
-export interface CompiledDocumentDownloadData {
-    originalFileName: string;
-    extractedOcrText: string;
-    chatHistoryJson: ChatHistoryItemDto[] | null;
-    sourceFileBlobPathname: string | null;
+// This interface is no longer needed as the method will return the actual PDF data
+// export interface CompiledDocumentDownloadData { ... }
+
+// Define the new return type for the method that prepares the final PDF for download
+export interface FinalPdfDownloadBundle {
+    fileName: string;
+    buffer: Buffer;
+    contentType: 'application/pdf';
 }
 
 @Injectable()
@@ -29,6 +34,8 @@ export class ChatService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly openAiService: OpenaiService,
+        private readonly pdfGenerationService: PdfGenerationService, // Injected
+        private readonly ocrService: OcrService,                   // Injected
     ) { }
 
     private generateChatTitle(firstMessageContent: string): string {
@@ -411,34 +418,79 @@ export class ChatService {
         };
     }
 
-    async prepareDataForCompiledDocumentDownload(chatId: string, userId: string): Promise<CompiledDocumentDownloadData> {
-        this.logger.log(`Preparing compiled document for download for chat ${chatId} by user ${userId}`);
+    async prepareDataForCompiledDocumentDownload(chatId: string, userId: string): Promise<FinalPdfDownloadBundle> {
+        this.logger.log(`Preparing compiled document PDF for download for chat ${chatId} by user ${userId}`);
 
         const compiledDoc = await this.prisma.compiledDocument.findUnique({
             where: { chatId: chatId },
             include: {
                 chat: { select: { userId: true } },
+                // sourceMessage: true, // We need sourceMessage.fileName for blob path
             },
         });
 
         if (!compiledDoc) {
-            throw new NotFoundException(`Compiled document for chat ID ${chatId} not found.`);
+            throw new NotFoundException(`Compiled document metadata for chat ID ${chatId} not found.`);
         }
 
         if (compiledDoc.chat.userId !== userId) {
             throw new ForbiddenException(`User ${userId} does not have access to compiled document for chat ID ${chatId}.`);
         }
 
-        const chatHistory = compiledDoc.chatHistoryJson
-            ? (compiledDoc.chatHistoryJson as unknown as ChatHistoryItemDto[])
+        if (!compiledDoc.sourceFileBlobPathname) {
+            this.logger.warn(`Source file blob pathname is missing for compiled document ${compiledDoc.id}. Original file cannot be embedded.`);
+        }
+
+        let originalFileBuffer: Buffer | undefined = undefined;
+        let originalFileType: 'pdf' | 'png' | 'jpeg' | 'unsupported' = 'unsupported';
+
+        if (compiledDoc.sourceFileBlobPathname) {
+            try {
+                originalFileBuffer = await this.ocrService.fetchFileBufferFromBlob(
+                    compiledDoc.sourceFileBlobPathname,
+                    `embedding in compiled PDF for chat ${chatId}`,
+                );
+                const extension = compiledDoc.originalFileName.split('.').pop()?.toLowerCase();
+                if (extension === 'pdf') originalFileType = 'pdf';
+                else if (extension === 'png') originalFileType = 'png';
+                else if (['jpg', 'jpeg'].includes(extension || '')) originalFileType = 'jpeg';
+                else {
+                    this.logger.warn(`Original file type .${extension} is unsupported for direct embedding. Path: ${compiledDoc.sourceFileBlobPathname}`);
+                    originalFileType = 'unsupported';
+                }
+            } catch (error) {
+                this.logger.error(
+                    `Failed to fetch original file buffer from blob ${compiledDoc.sourceFileBlobPathname} for PDF generation: ${(error as Error).message}`,
+                    (error as Error).stack,
+                );
+                // Continue without embedding the original file if fetching fails
+                originalFileBuffer = undefined;
+                originalFileType = 'unsupported';
+            }
+        }
+
+        const chatHistoryForPdf: ChatHistoryPdfItem[] | null = compiledDoc.chatHistoryJson
+            ? (compiledDoc.chatHistoryJson as unknown as ChatHistoryPdfItem[]) // Assuming structure matches
             : null;
 
-        this.logger.log(`Compiled doc for download - ID: ${compiledDoc.id}, OriginalFileName: ${compiledDoc.originalFileName}, SourceFileBlobPathname: ${compiledDoc.sourceFileBlobPathname}`);
-        return {
+        const pdfInputData: CompiledPdfData = {
             originalFileName: compiledDoc.originalFileName,
             extractedOcrText: compiledDoc.extractedOcrText,
-            chatHistoryJson: chatHistory,
-            sourceFileBlobPathname: compiledDoc.sourceFileBlobPathname,
+            chatHistory: chatHistoryForPdf,
+            originalFileBuffer: originalFileBuffer,
+            originalFileType: originalFileType,
+        };
+
+        const pdfBuffer = await this.pdfGenerationService.generateCompiledPdf(pdfInputData);
+
+        const downloadFileName = `compiled_${compiledDoc.originalFileName.replace(/\.[^/.]+$/, "")}_${chatId.substring(0, 8)}.pdf`;
+
+        this.logger.log(`Generated compiled PDF for download: ${downloadFileName}, Size: ${pdfBuffer.length} bytes`);
+
+        return {
+            fileName: downloadFileName,
+            buffer: pdfBuffer,
+            contentType: 'application/pdf',
         };
     }
 }

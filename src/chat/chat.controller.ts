@@ -8,11 +8,14 @@ import {
     Req,
     HttpCode,
     HttpStatus,
+    Res, // Import Res
+    StreamableFile, // Import StreamableFile
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatMessageDto as SendMessageDto } from './dto/chat-message.dto';
 import { AuthGuard } from '@nestjs/passport';
+import { Response } from 'express'; // Import Response type from express
 
 // Define a type for the user object attached by JwtStrategy
 interface AuthenticatedUser {
@@ -22,7 +25,7 @@ interface AuthenticatedUser {
 }
 
 @Controller('chat')
-@UseGuards(AuthGuard('jwt')) // Apply JWT guard to the whole controller
+@UseGuards(AuthGuard('jwt'))
 export class ChatController {
     constructor(private readonly chatService: ChatService) { }
 
@@ -79,9 +82,16 @@ export class ChatController {
     async downloadCompiledDocument(
         @Param('chatId') chatId: string,
         @Req() req: { user: AuthenticatedUser },
+        @Res({ passthrough: true }) res: Response, // Inject Response, passthrough: true for StreamableFile
     ) {
         console.log('[Backend /chat/:chatId/download-compiled] User from JWT:', req.user);
         const fileData = await this.chatService.prepareDataForCompiledDocumentDownload(chatId, req.user.userId);
-        return fileData;
+        // fileData is an object: { fileName: string, buffer: Buffer, contentType: string }
+
+        res.setHeader('Content-Type', fileData.contentType); // e.g., 'application/pdf'
+        res.setHeader('Content-Disposition', `attachment; filename="${fileData.fileName}"`);
+
+        // Using StreamableFile is the recommended NestJS way to send files/buffers
+        return new StreamableFile(fileData.buffer);
     }
 }
