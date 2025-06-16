@@ -16,16 +16,37 @@ async function bootstrap() {
     const expressApp = express();
     const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
 
-    const frontendUrl = process.env.FRONTEND_URL;
-    console.log(`[Backend] Configuring CORS for origin: ${frontendUrl}`);
-    const allowedOrigins = ['https://paggo-ocr-case-ochre.vercel.app', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
-    if (process.env.FRONTEND_URL) {
-        allowedOrigins.push(process.env.FRONTEND_URL);
-    }
+    // Session middleware setup
+    app.use(
+        session({
+            secret: process.env.SESSION_SECRET || 'a_very_secure_default_secret_for_dev_only_change_me', // Change this default
+            resave: false,
+            saveUninitialized: false,
+            cookie: {
+                maxAge: 24 * 60 * 60 * 1000, // 1 day
+                httpOnly: true,
+                // Secure and SameSite settings for cross-origin session cookies
+                secure: process.env.NODE_ENV === 'production', // Set to true if in production (HTTPS)
+                sameSite: process.env.NODE_ENV === 'production' ? 'none' : 'lax', // 'none' for cross-site, 'lax' for same-site or dev
+            },
+        }),
+    );
 
+    app.use(passport.initialize());
+    app.use(passport.session());
+
+    const frontendUrl = process.env.FRONTEND_URL;
+    console.log(`[Backend] Configuring CORS. FRONTEND_URL from env: ${frontendUrl}`);
+
+    const allowedOrigins = ['https://paggo-ocr-case-ochre.vercel.app', 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
+    if (frontendUrl && !allowedOrigins.includes(frontendUrl)) {
+        allowedOrigins.push(frontendUrl);
+    }
+    console.log('[Backend] Effective allowed origins for CORS:', allowedOrigins);
 
     app.enableCors({
         origin: (origin, callback) => {
+            // Allow requests with no origin (like mobile apps or curl requests)
             if (!origin || allowedOrigins.some(allowed => origin.startsWith(allowed))) {
                 callback(null, true);
             } else {
@@ -33,11 +54,11 @@ async function bootstrap() {
                 callback(new Error('Not allowed by CORS'));
             }
         },
-        credentials: true,
-        methods: 'GET,HEAD,PUT,PATCH,POST,DELETE,OPTIONS',
-        allowedHeaders: 'Content-Type, Accept, Authorization, X-Requested-With',
+        credentials: true, // Important for sending cookies
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     });
-    console.log('[Backend] CORS configured.');
+
 
     app.useGlobalPipes(
         new ValidationPipe({
@@ -48,30 +69,9 @@ async function bootstrap() {
     );
     console.log('[Backend] Global validation pipe set.');
 
-    console.log('[Backend] Setting up session middleware...');
-    app.use(
-        session({
-            secret: process.env.SESSION_SECRET || '!@#$_a_very_secure_secret_for_development_!@#$',
-            resave: false,
-            saveUninitialized: false,
-            cookie: {
-                secure: process.env.NODE_ENV === 'production',
-                httpOnly: true,
-                maxAge: 24 * 60 * 60 * 1000,
-                sameSite: 'lax',
-            },
-        }),
-    );
-    console.log('[Backend] Session cookie settings applied.');
-
-    app.use(passport.initialize());
-    app.use(passport.session());
-    console.log('[Backend] Passport initialized.');
-
-    await app.init();
-    console.log('[Backend] Nest application initialized.');
     cachedServer = expressApp;
-    return expressApp;
+    console.log('[Backend] Nest application initialized and configured.');
+    return cachedServer;
 }
 
 // Export a function that Vercel can call.
