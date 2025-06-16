@@ -1,17 +1,33 @@
 import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { PrismaModule } from '../prisma/prisma.module';
 import { PassportModule } from '@nestjs/passport';
-import { SessionSerializer } from './session.serializer';
+import { JwtModule } from '@nestjs/jwt';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+import { JwtStrategy } from './jwt.strategy';
 
 @Module({
     imports: [
-        PassportModule.register({ session: true }), // Ensure session support is enabled
+        PrismaModule,
+        PassportModule.register({ defaultStrategy: 'jwt' }), // Default to jwt
+        JwtModule.registerAsync({
+            imports: [ConfigModule],
+            useFactory: async (configService: ConfigService) => ({
+                secret: configService.get<string>('JWT_SECRET'),
+                signOptions: {
+                    expiresIn: configService.get<string>('JWT_EXPIRES_IN') || '1h',
+                },
+            }),
+            inject: [ConfigService],
+        }),
+        ConfigModule, // Ensure ConfigModule is imported if not globally
     ],
     controllers: [AuthController],
     providers: [
         AuthService,
-        SessionSerializer, // Register the serializer
+        JwtStrategy,
     ],
+    exports: [AuthService, JwtModule],
 })
 export class AuthModule { }

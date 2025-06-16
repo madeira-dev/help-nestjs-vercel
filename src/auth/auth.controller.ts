@@ -1,48 +1,87 @@
-import { Controller, Post, Body, HttpCode, HttpStatus, UnauthorizedException, Req, Res, Get } from '@nestjs/common';
+import {
+    Controller,
+    Post,
+    Body,
+    HttpCode,
+    HttpStatus,
+    UnauthorizedException,
+    Get,
+    UseGuards,
+    Req, // Keep Req for JWT Guard
+    // Res, // No longer directly manipulating Res for session logout
+} from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
-import { Response, Request } from 'express';
+import { LoginUserDto } from './dto/login-user.dto'
+import { JwtService } from '@nestjs/jwt';
+import { AuthGuard } from '@nestjs/passport'; // Use the default JWT guard
+import { User as UserModel } from '../../generated/prisma'; // Assuming Prisma model
+
+// Define a type for the user object attached by JwtStrategy
+interface AuthenticatedUser {
+    userId: string;
+    email: string;
+    name?: string;
+}
 
 @Controller('auth')
 export class AuthController {
-    constructor(private readonly authService: AuthService) { }
+    constructor(
+        private readonly authService: AuthService,
+        private readonly jwtService: JwtService,
+    ) { }
 
     @Post('signup')
-    @HttpCode(HttpStatus.CREATED)
-    async signUp(@Body() createUserDto: CreateUserDto) {
-        return this.authService.signUp(createUserDto);
+    async signup(@Body() createUserDto: CreateUserDto) {
+        console.log('[Backend /auth/signup] Attempting signup for:', createUserDto.email);
+        try {
+            const userWithoutPassword = await this.authService.createUser(createUserDto);
+
+            console.log('[Backend /auth/signup] User created successfully:', userWithoutPassword.email);
+            return userWithoutPassword;
+        } catch (error) {
+            console.error('[Backend /auth/signup] Signup error:', error.message);
+            throw error;
+        }
     }
 
-    // This endpoint will be called by NextAuth.js's authorize function.
-    // It needs to validate credentials AND establish a session via req.login().
     @Post('login')
     @HttpCode(HttpStatus.OK)
-    async login(@Body() loginUserDto: LoginUserDto, @Req() req: Request, @Res({ passthrough: true }) response: Response) {
-        console.log('[Backend /auth/login] Attempting login for:', loginUserDto.email);
-        // Assuming this.authService.validateUserCredentials returns a user object
-        // that already has the 'password' field omitted.
-        const user = await this.authService.validateUserCredentials(loginUserDto);
-        if (!user) {
+    async login(@Body() loginUserDto: LoginUserDto) {
+        console.log('[Backend /auth/login] Attempting JWT login for:', loginUserDto.email);
+        const fullUser = await this.authService.validateUserCredentials(loginUserDto);
+
+        if (!fullUser) {
             console.warn('[Backend /auth/login] Invalid credentials for:', loginUserDto.email);
-            throw new UnauthorizedException('Invalid credentials for backend login');
+            throw new UnauthorizedException('Invalid credentials');
         }
 
-        // The type of 'user' here is already Omit<OriginalUserType, 'password'>.
-        // The Promise generic Omit<typeof user, 'password'> correctly resolves to this type
-        // because 'password' is not a direct key of 'typeof user' (it's already omitted from its base).
-        return new Promise<Omit<typeof user, 'password'>>((resolve, reject) => {
-            req.login(user, (err) => { // 'user' (which is Omit<OriginalUserType, 'password'>) is passed to req.login
-                if (err) {
-                    console.error('[Backend /auth/login] req.login error:', err);
-                    return reject(new UnauthorizedException('Backend session login failed'));
-                }
-                // If req.login is successful, express-session middleware will handle
-                // sending the Set-Cookie header for connect.sid.
-                console.log(`[Backend /auth/login] User ${user.email} successfully logged in via req.login(). Session created/updated.`);
-                const userInfo = user;
-                return resolve(userInfo);
-            });
-        });
+        const payload = { email: fullUser.email, sub: fullUser.id, name: fullUser.name };
+        const accessToken = this.jwtService.sign(payload);
+
+        console.log(`[Backend /auth/login] User ${fullUser.email} successfully validated. JWT issued.`);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { password, ...userResult } = fullUser;
+        return {
+            user: userResult,
+            accessToken: accessToken,
+        };
+    }
+
+    @UseGuards(AuthGuard('jwt'))
+    @Get('status')
+    status(@Req() req: { user: AuthenticatedUser }) {
+        console.log('[Backend /auth/status] User from JWT:', req.user);
+        if (!req.user) {
+            throw new UnauthorizedException('User not authenticated or token invalid');
+        }
+        return { user: req.user };
+    }
+
+    @Post('logout')
+    @HttpCode(HttpStatus.OK)
+    async logout() {
+        console.log('[Backend /auth/logout] JWT logout called (client should discard token)');
+        return { message: 'Logged out successfully (client should discard token)' };
     }
 }
