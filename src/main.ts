@@ -19,8 +19,8 @@ async function bootstrap() {
     const frontendUrl = process.env.FRONTEND_URL;
     console.log(`[Backend] Configuring CORS for origin: ${frontendUrl}`);
     const allowedOrigins = [frontendUrl, 'http://localhost:3000', 'http://localhost:3001', 'http://localhost:3002'];
-    if (process.env.VERCEL_URL) {
-        allowedOrigins.push(`https://${process.env.VERCEL_URL}`);
+    if (process.env.FRONTEND_URL) {
+        allowedOrigins.push(process.env.FRONTEND_URL);
     }
 
 
