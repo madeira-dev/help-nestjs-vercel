@@ -50,19 +50,19 @@ JWT_EXPIRES_IN=1h
 ### Frontend:
 If you have pnpm installed you may run:
 ```bash
-cd paggo-ocr-case/paggo-monoreppo/apps/web/
+cd paggo-ocr-case/paggo-monorepo/apps/web/
 pnpm install
 ```
 
 Otherwise, it is possible to achieve the same with npx:
 ```bash
-cd paggo-ocr-case/paggo-monoreppo/apps/web/
+cd paggo-ocr-case/paggo-monorepo/apps/web/
 npx pnpm install
 ```
 
 ### Backend:
 ```bash
-# in the root directory of the backend repository
+cd help-nestjs-vercel/
 npm install
 ```
 
