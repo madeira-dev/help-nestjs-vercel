@@ -14,13 +14,9 @@ import { ChatMessageDto } from './dto/chat-message.dto';
 import { CompiledDocumentDto, ChatHistoryItemDto } from './dto/compiled-document.dto';
 import { DocumentItemDto } from './dto/document-item.dto';
 import { Message as PrismaMessage, MessageSender, CompiledDocument as PrismaCompiledDocument, Chat as PrismaChat, Message } from '../../generated/prisma';
-import { PdfGenerationService, CompiledPdfData, ChatHistoryPdfItem } from '../pdf/pdf-generation.service'; // Import PDF Generation Service and types
-import { OcrService } from '../ocr/ocr.service'; // Import OCR Service
+import { PdfGenerationService, CompiledPdfData, ChatHistoryPdfItem } from '../pdf/pdf-generation.service';
+import { OcrService } from '../ocr/ocr.service';
 
-// This interface is no longer needed as the method will return the actual PDF data
-// export interface CompiledDocumentDownloadData { ... }
-
-// Define the new return type for the method that prepares the final PDF for download
 export interface FinalPdfDownloadBundle {
     fileName: string;
     buffer: Buffer;
@@ -34,8 +30,8 @@ export class ChatService {
     constructor(
         private readonly prisma: PrismaService,
         private readonly openAiService: OpenaiService,
-        private readonly pdfGenerationService: PdfGenerationService, // Injected
-        private readonly ocrService: OcrService,                   // Injected
+        private readonly pdfGenerationService: PdfGenerationService,
+        private readonly ocrService: OcrService,
     ) { }
 
     private generateChatTitle(firstMessageContent: string): string {
@@ -107,8 +103,7 @@ export class ChatService {
                 content: true,
                 createdAt: true,
                 fileName: true, // This is the blob pathname
-                originalUserFileName: true, // Ensure this is selected if needed for chatHistorySnapshot
-                // extractedOcrText: true, // Not typically part of chat history display item, but available on sourceMessage
+                originalUserFileName: true,
             },
         });
 
@@ -116,7 +111,6 @@ export class ChatService {
             sender: msg.sender,
             content: msg.content,
             createdAt: msg.createdAt.toISOString(),
-            // Use originalUserFileName for display in history if it's the source document
             ...(msg.id === sourceMessage.id && msg.originalUserFileName && { isSourceDocument: true, fileName: msg.originalUserFileName }),
         }));
 
@@ -126,22 +120,14 @@ export class ChatService {
                 create: {
                     chatId: chatId,
                     sourceMessageId: sourceMessage.id,
-                    // Use originalUserFileName from the source message for the CompiledDocument's originalFileName
                     originalFileName: sourceMessage.originalUserFileName || sourceMessage.fileName || 'Unknown Document',
                     extractedOcrText: sourceMessage.extractedOcrText,
                     chatHistoryJson: chatHistorySnapshot as any,
-                    // Populate sourceFileBlobPathname with the fileName from sourceMessage (which is the blob path)
                     sourceFileBlobPathname: sourceMessage.fileName,
                 },
                 update: {
                     chatHistoryJson: chatHistorySnapshot as any,
                     updatedAt: new Date(),
-                    // If the source document changes, these might need updating too,
-                    // but typically CompiledDocument is tied to one initial sourceMessage.
-                    // If originalFileName or sourceFileBlobPathname could change, add them here.
-                    // For instance, if a re-upload changes the blob path for the *same* logical document:
-                    // originalFileName: sourceMessage.originalUserFileName || sourceMessage.fileName || 'Unknown Document',
-                    // sourceFileBlobPathname: sourceMessage.fileName,
                 },
             });
             this.logger.log(`Successfully upserted CompiledDocument ${compiledDoc.id} for chat ${chatId}`);
@@ -188,8 +174,8 @@ export class ChatService {
                 content: message,
                 sender: MessageSender.USER,
                 extractedOcrText: extractedOcrText,
-                fileName: fileName, // This is the blob pathname
-                originalUserFileName: originalUserFileName, // Save the original user file name
+                fileName: fileName, // blob pathname
+                originalUserFileName: originalUserFileName, // save the original user file name
             },
         });
         this.logger.log(`Saved user message ${savedUserMessage.id} (original: ${originalUserFileName}, blob: ${fileName}) for chat ${chat.id}`);
@@ -208,9 +194,6 @@ export class ChatService {
             if (existingCompiledDoc && existingCompiledDoc.sourceMessage) {
                 sourceMessageForCompiledDoc = existingCompiledDoc.sourceMessage;
             } else {
-                // If no compiled doc exists yet for this existing chat,
-                // and this message (savedUserMessage) contains a file and OCR text,
-                // it should become the source for a new CompiledDocument.
                 if (savedUserMessage.fileName && savedUserMessage.extractedOcrText !== null) {
                     sourceMessageForCompiledDoc = savedUserMessage;
                 } else {
@@ -425,7 +408,6 @@ export class ChatService {
             where: { chatId: chatId },
             include: {
                 chat: { select: { userId: true } },
-                // sourceMessage: true, // We need sourceMessage.fileName for blob path
             },
         });
 
@@ -463,14 +445,13 @@ export class ChatService {
                     `Failed to fetch original file buffer from blob ${compiledDoc.sourceFileBlobPathname} for PDF generation: ${(error as Error).message}`,
                     (error as Error).stack,
                 );
-                // Continue without embedding the original file if fetching fails
                 originalFileBuffer = undefined;
                 originalFileType = 'unsupported';
             }
         }
 
         const chatHistoryForPdf: ChatHistoryPdfItem[] | null = compiledDoc.chatHistoryJson
-            ? (compiledDoc.chatHistoryJson as unknown as ChatHistoryPdfItem[]) // Assuming structure matches
+            ? (compiledDoc.chatHistoryJson as unknown as ChatHistoryPdfItem[])
             : null;
 
         const pdfInputData: CompiledPdfData = {

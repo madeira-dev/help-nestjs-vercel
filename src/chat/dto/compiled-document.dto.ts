@@ -1,7 +1,6 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { MessageSender } from '../../../generated/prisma';
 
-// ChatHistoryItem as a class for Swagger documentation
 export class ChatHistoryItem {
     @ApiProperty({ enum: ['USER', 'BOT'], example: 'USER' })
     sender: 'USER' | 'BOT';
@@ -22,9 +21,9 @@ export class ChatHistoryItem {
 export interface ChatHistoryItemDto {
     sender: MessageSender;
     content: string;
-    createdAt: string; // ISO Date string
+    createdAt: string;
     isSourceDocument?: boolean;
-    fileName?: string; // Original file name for the source document message
+    fileName?: string;
 }
 
 export class CompiledDocumentDto {
@@ -38,7 +37,7 @@ export class CompiledDocumentDto {
     sourceMessageId: string;
 
     @ApiProperty()
-    originalFileName: string; // The original name of the uploaded file
+    originalFileName: string; // original name of the uploaded file
 
     @ApiProperty()
     sourceFileBlobPathname: string;
@@ -57,9 +56,9 @@ export class CompiledDocumentDto {
     })
     chatHistoryJson: ChatHistoryItemDto[] | null;
 
-    @ApiProperty({ type: String, format: 'date-time', example: '2025-06-14T10:30:00.000Z' }) // MODIFIED: Type to string
+    @ApiProperty({ type: String, format: 'date-time', example: '2025-06-14T10:30:00.000Z' })
     createdAt: string;
 
-    @ApiProperty({ type: String, format: 'date-time', example: '2025-06-14T10:35:00.000Z' }) // MODIFIED: Type to string
+    @ApiProperty({ type: String, format: 'date-time', example: '2025-06-14T10:35:00.000Z' })
     updatedAt: string;
 }

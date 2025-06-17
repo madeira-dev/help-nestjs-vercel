@@ -26,7 +26,7 @@ export class OpenaiService {
         chatHistory: Array<{ role: 'user' | 'assistant'; content: string }>,
         extractedOcrText?: string,
         fileName?: string,
-    ): Promise<string> { // This method now returns a string or throws an error
+    ): Promise<string> {
         this.logger.log(
             `Attempting to get chat completion. History length: ${chatHistory.length}`,
         );
@@ -34,7 +34,7 @@ export class OpenaiService {
         const systemMessageContent = `You are a helpful assistant.
         ${fileName ? `The user has uploaded a file named "${fileName}".` : ''}
         ${extractedOcrText ? `The extracted text from the file is: "${extractedOcrText}"` : ''}
-        Respond to the user's message based on this context and the chat history.`;
+        Respond to the user's message based on the context and content of this file and the chat history.`;
 
         const messages: ChatMessageForAI[] = [
             { role: 'system', content: systemMessageContent },
@@ -57,7 +57,7 @@ export class OpenaiService {
 
             if (!botResponse || botResponse.trim() === '') {
                 this.logger.error('OpenAI response content is empty or invalid.');
-                throw new Error('OpenAI failed to generate a valid response content.'); // MODIFIED: Throw error
+                throw new Error('OpenAI failed to generate a valid response content.');
             }
             this.logger.log(`Received response from OpenAI.`);
             return botResponse.trim();
@@ -66,7 +66,6 @@ export class OpenaiService {
             if (error.response) {
                 this.logger.error('OpenAI API Error Response:', error.response.data);
             }
-            // MODIFIED: Re-throw a more specific error or the original one
             if (error instanceof Error && error.message === 'OpenAI failed to generate a valid response content.') {
                 throw error;
             }

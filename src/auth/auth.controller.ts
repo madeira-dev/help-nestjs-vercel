@@ -7,15 +7,14 @@ import {
     UnauthorizedException,
     Get,
     UseGuards,
-    Req, // Keep Req for JWT Guard
-    // Res, // No longer directly manipulating Res for session logout
+    Req,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { LoginUserDto } from './dto/login-user.dto'
 import { JwtService } from '@nestjs/jwt';
-import { AuthGuard } from '@nestjs/passport'; // Use the default JWT guard
-import { User as UserModel } from '../../generated/prisma'; // Assuming Prisma model
+import { AuthGuard } from '@nestjs/passport';
+import { User as UserModel } from '../../generated/prisma';
 
 // Define a type for the user object attached by JwtStrategy
 interface AuthenticatedUser {

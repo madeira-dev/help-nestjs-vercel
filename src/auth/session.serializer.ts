@@ -26,7 +26,7 @@ export class SessionSerializer extends PassportSerializer {
                 done(null, userInfo);
             } else {
                 this.logger.warn(`[SessionSerializer] deserializeUser: User with ID ${userId} not found.`);
-                done(null, false); // Passport expects false if user not found
+                done(null, false);
             }
         } catch (error) {
             this.logger.error(`[SessionSerializer] deserializeUser: Error finding user ID ${userId}`, error);

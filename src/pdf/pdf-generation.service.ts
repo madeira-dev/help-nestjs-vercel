@@ -1,13 +1,11 @@
-// filepath: apps/backend/src/pdf/pdf-generation.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { PDFDocument, StandardFonts, rgb, PageSizes, PDFFont, PDFPage } from 'pdf-lib';
 import { MessageSender } from '../../generated/prisma';
 
-// Matches the ChatHistoryItemDto from chat.dto.ts
 export interface ChatHistoryPdfItem {
     sender: MessageSender;
     content: string;
-    createdAt: string; // ISO Date string
+    createdAt: string;
     isSourceDocument?: boolean;
     fileName?: string;
 }
@@ -31,13 +29,13 @@ export class PdfGenerationService {
             const char = text[i];
             const code = text.charCodeAt(i);
 
-            // Allow newline, carriage return, tab as addWrappedTextToPage handles them
+            // allow newline, carriage return, tab as addWrappedTextToPage handles them
             if (char === '\n' || char === '\r' || char === '\t') {
                 sanitized += char;
                 continue;
             }
 
-            // Basic printable ASCII
+            // basic printable ASCII
             if (code >= 0x0020 && code <= 0x007E) {
                 sanitized += char;
                 continue;
@@ -49,7 +47,7 @@ export class PdfGenerationService {
                 continue;
             }
 
-            // Specific WinAnsi characters from the C1 control range (mapped to Unicode)
+            // Specific WinAnsi characters from the C1 control range
             const winAnsiExtras = [
                 0x20AC, // € Euro sign
                 0x201A, // ‚ Single low-9 quotation mark
@@ -87,7 +85,7 @@ export class PdfGenerationService {
                 continue;
             }
 
-            // Replace unsupported characters (like "●" U+25CF) with '?'
+            // Replace unsupported characters with '?'
             sanitized += '?';
         }
         return sanitized;
@@ -107,7 +105,6 @@ export class PdfGenerationService {
     ): Promise<{ currentPage: PDFPage, yPosition: number }> {
         let y = startY;
         let currentPage = page;
-        // Text parameter is now expected to be pre-sanitized
         const naturalTextLines = text.split('\n');
 
         for (const lineContent of naturalTextLines) {
@@ -127,7 +124,7 @@ export class PdfGenerationService {
                 if (word.trim() === '' && currentLineSegment.trim() === '') continue;
 
                 const testSegment = currentLineSegment + (currentLineSegment ? ' ' : '') + word;
-                const segmentWidth = font.widthOfTextAtSize(testSegment, size); // This line caused the error
+                const segmentWidth = font.widthOfTextAtSize(testSegment, size);
 
                 if (segmentWidth <= maxWidth) {
                     currentLineSegment = testSegment;
@@ -220,13 +217,13 @@ export class PdfGenerationService {
                     await this.addWrappedTextToPage(errorPage, 'Error: Could not embed the original image document.', helveticaFont, 12, pageMargin, contentHeight + pageMargin - 20, contentWidth, pageMargin, 14, pdfDoc);
                     currentPage = errorPage;
                 }
-            } else { // Unsupported type
+            } else { // unsupported type
                 const unsupportedPage = pdfDoc.addPage(PageSizes.A4);
                 const unsupportedMessage = `Original file (${this.sanitizeTextForWinAnsi(data.originalFileName)}) is of an unsupported type for direct embedding.`;
                 await this.addWrappedTextToPage(unsupportedPage, unsupportedMessage, helveticaFont, 12, pageMargin, contentHeight + pageMargin - 20, contentWidth, pageMargin, 14, pdfDoc);
                 currentPage = unsupportedPage;
             }
-        } else { // No original file buffer
+        } else { // no original file buffer
             const noFilePage = pdfDoc.addPage(PageSizes.A4);
             await this.addWrappedTextToPage(noFilePage, 'Original file was not available for embedding.', helveticaFont, 12, pageMargin, contentHeight + pageMargin - 20, contentWidth, pageMargin, 14, pdfDoc);
             currentPage = noFilePage;
@@ -236,7 +233,7 @@ export class PdfGenerationService {
         // --- 2. Add OCR Extracted Text ---
         let ocrPage = pdfDoc.addPage(PageSizes.A4);
         let ocrY = contentHeight + pageMargin - 20;
-        ocrPage.drawText('OCR Extracted Text', { x: pageMargin, y: ocrY, font: helveticaBoldFont, size: 16 }); // ASCII title
+        ocrPage.drawText('OCR Extracted Text', { x: pageMargin, y: ocrY, font: helveticaBoldFont, size: 16 });
         ocrY -= 25;
 
         const sanitizedOcrText = this.sanitizeTextForWinAnsi(data.extractedOcrText || 'No OCR text extracted.');
@@ -253,14 +250,14 @@ export class PdfGenerationService {
             currentY -= 20;
         }
 
-        currentPage.drawText('Chat History', { x: pageMargin, y: currentY, font: helveticaBoldFont, size: 16 }); // ASCII title
+        currentPage.drawText('Chat History', { x: pageMargin, y: currentY, font: helveticaBoldFont, size: 16 });
         currentY -= 25;
 
         if (data.chatHistory && data.chatHistory.length > 0) {
             for (const msg of data.chatHistory) {
-                const senderName = msg.sender === 'USER' ? 'User' : 'AI'; // ASCII
-                const timestamp = new Date(msg.createdAt).toLocaleString(); // Standard date/time chars, generally safe
-                const headerText = this.sanitizeTextForWinAnsi(`${senderName} [${timestamp}]:`); // Sanitize just in case localeString has odd chars
+                const senderName = msg.sender === 'USER' ? 'User' : 'AI';
+                const timestamp = new Date(msg.createdAt).toLocaleString();
+                const headerText = this.sanitizeTextForWinAnsi(`${senderName} [${timestamp}]:`);
 
                 const headerResult = await this.addWrappedTextToPage(currentPage, headerText, helveticaBoldFont, 10, pageMargin, currentY, contentWidth, pageMargin, 12, pdfDoc);
                 currentPage = headerResult.currentPage;
@@ -274,7 +271,7 @@ export class PdfGenerationService {
 
                 if (msg.fileName) {
                     const sanitizedFileName = this.sanitizeTextForWinAnsi(msg.fileName);
-                    const fileText = `(Attached file: ${sanitizedFileName})`; // Already sanitized
+                    const fileText = `(Attached file: ${sanitizedFileName})`;
                     const fileTextResult = await this.addWrappedTextToPage(currentPage, fileText, helveticaFont, 8, pageMargin + 10, currentY, contentWidth - 10, pageMargin, 10, pdfDoc);
                     currentPage = fileTextResult.currentPage;
                     currentY = fileTextResult.yPosition;
@@ -282,7 +279,7 @@ export class PdfGenerationService {
                 currentY -= 15;
             }
         } else {
-            const noHistoryResult = await this.addWrappedTextToPage(currentPage, 'No chat history available.', helveticaFont, 10, pageMargin, currentY, contentWidth, pageMargin, 12, pdfDoc); // ASCII
+            const noHistoryResult = await this.addWrappedTextToPage(currentPage, 'No chat history available.', helveticaFont, 10, pageMargin, currentY, contentWidth, pageMargin, 12, pdfDoc);
             currentPage = noHistoryResult.currentPage;
         }
         this.logger.log('Added chat history to PDF.');

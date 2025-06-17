@@ -8,16 +8,15 @@ import {
     Req,
     HttpCode,
     HttpStatus,
-    Res, // Import Res
-    StreamableFile, // Import StreamableFile
+    Res,
+    StreamableFile,
 } from '@nestjs/common';
 import { ChatService } from './chat.service';
 import { CreateChatDto } from './dto/create-chat.dto';
 import { ChatMessageDto as SendMessageDto } from './dto/chat-message.dto';
 import { AuthGuard } from '@nestjs/passport';
-import { Response } from 'express'; // Import Response type from express
+import { Response } from 'express';
 
-// Define a type for the user object attached by JwtStrategy
 interface AuthenticatedUser {
     userId: string;
     email: string;
@@ -82,16 +81,14 @@ export class ChatController {
     async downloadCompiledDocument(
         @Param('chatId') chatId: string,
         @Req() req: { user: AuthenticatedUser },
-        @Res({ passthrough: true }) res: Response, // Inject Response, passthrough: true for StreamableFile
+        @Res({ passthrough: true }) res: Response,
     ) {
         console.log('[Backend /chat/:chatId/download-compiled] User from JWT:', req.user);
         const fileData = await this.chatService.prepareDataForCompiledDocumentDownload(chatId, req.user.userId);
-        // fileData is an object: { fileName: string, buffer: Buffer, contentType: string }
 
-        res.setHeader('Content-Type', fileData.contentType); // e.g., 'application/pdf'
+        res.setHeader('Content-Type', fileData.contentType);
         res.setHeader('Content-Disposition', `attachment; filename="${fileData.fileName}"`);
 
-        // Using StreamableFile is the recommended NestJS way to send files/buffers
         return new StreamableFile(fileData.buffer);
     }
 }

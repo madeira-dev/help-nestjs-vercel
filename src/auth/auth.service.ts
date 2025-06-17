@@ -7,7 +7,7 @@ import { User } from '../../generated/prisma';
 
 @Injectable()
 export class AuthService {
-    public readonly logger = new Logger(AuthService.name); // Make it public or provide a public log method
+    public readonly logger = new Logger(AuthService.name);
 
     constructor(private readonly prisma: PrismaService) { }
 
@@ -32,12 +32,10 @@ export class AuthService {
                 },
             });
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { password: _, ...result } = user; // Exclude password from the returned object
+            const { password: _, ...result } = user;
             return result;
         } catch (error) {
-            // Log the detailed error for server-side debugging
             console.error('[AuthService createUser] Error creating user:', error);
-            // Provide a generic error message to the client
             throw new InternalServerErrorException('Could not create user. Please try again later.');
         }
     }

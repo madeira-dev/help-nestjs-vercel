@@ -9,7 +9,7 @@ import {
 } from '@nestjs/common';
 import { OcrService } from './ocr.service';
 
-// Define the expected payload structure
+// expected payload structure
 interface ExtractTextPayloadDto {
     blobPathname: string;
     originalFileName: string;
@@ -22,9 +22,9 @@ export class OcrController {
     constructor(private readonly ocrService: OcrService) { }
 
     @Post('extract-text')
-    async extractTextFromBlob( // Method name changed for clarity
-        @Body() payload: ExtractTextPayloadDto, // MODIFIED: Use @Body() to get JSON payload
-    ): Promise<{ text: string }> { // Ensure response matches frontend expectation
+    async extractTextFromBlob(
+        @Body() payload: ExtractTextPayloadDto,
+    ): Promise<{ text: string }> {
         this.logger.log(
             `Received request to extract text from blob: ${payload.blobPathname} (Original: ${payload.originalFileName})`,
         );
@@ -43,14 +43,14 @@ export class OcrController {
                 payload.blobPathname,
                 payload.originalFileName,
             );
-            return { text: extractedText }; // Return in the format expected by frontend
+            return { text: extractedText };
         } catch (error) {
             this.logger.error(
                 `Error in OcrController while processing blob ${payload.blobPathname}: ${(error as Error).message}`,
                 (error as Error).stack,
             );
             if (error instanceof HttpException) {
-                throw error; // Re-throw if it's already an HttpException (like 400, 404, 500 from service)
+                throw error;
             }
             throw new InternalServerErrorException(
                 'An unexpected error occurred during OCR processing.',

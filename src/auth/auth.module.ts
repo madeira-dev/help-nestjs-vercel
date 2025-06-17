@@ -10,7 +10,7 @@ import { JwtStrategy } from './jwt.strategy';
 @Module({
     imports: [
         PrismaModule,
-        PassportModule.register({ defaultStrategy: 'jwt' }), // Default to jwt
+        PassportModule.register({ defaultStrategy: 'jwt' }),
         JwtModule.registerAsync({
             imports: [ConfigModule],
             useFactory: async (configService: ConfigService) => ({
@@ -21,7 +21,7 @@ import { JwtStrategy } from './jwt.strategy';
             }),
             inject: [ConfigService],
         }),
-        ConfigModule, // Ensure ConfigModule is imported if not globally
+        ConfigModule,
     ],
     controllers: [AuthController],
     providers: [

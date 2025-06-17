@@ -34,9 +34,7 @@ export class OcrService {
             `Attempting to extract text from blob: ${blobPathname} (Original: ${originalFileName})`,
         );
 
-        // Ensure this method calls the public fetchFileBufferFromBlob or has its own fetch logic
         const fileBuffer = await this.fetchFileBufferFromBlob(blobPathname, `OCR processing for ${originalFileName}`);
-        // ... rest of OCR logic from previous implementation ...
         const fileType = originalFileName.split('.').pop()?.toLowerCase() || '';
         let extractedText: string;
 
@@ -58,7 +56,6 @@ export class OcrService {
         return extractedText || "";
     }
 
-    // Ensure this public method exists
     async fetchFileBufferFromBlob(blobPathname: string, contextMessage: string = "file operation"): Promise<Buffer> {
         if (!this.vercelBlobBaseUrl) {
             this.logger.error(`VERCEL_BLOB_BASE_URL is not configured. Cannot proceed with ${contextMessage}.`);

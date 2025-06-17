@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export class DocumentItemDto {
     @ApiProperty()
-    documentId: string; // Message ID
+    documentId: string; // message ID
 
     @ApiProperty()
     chatId: string;

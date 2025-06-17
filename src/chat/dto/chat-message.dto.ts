@@ -8,17 +8,17 @@ export class ChatMessageDto {
 
     @IsString()
     @IsNotEmpty()
-    message: string; // User's typed message
+    message: string; // user's typed message
 
     @IsOptional()
     @IsString()
-    extractedOcrText?: string; // Text extracted by OCR
+    extractedOcrText?: string; // text extracted by OCR
 
     @IsOptional()
     @IsString()
-    fileName?: string; // This should ideally be the Vercel Blob pathname/URL
+    fileName?: string; // should be the Vercel Blob pathname/URL
 
     @IsOptional()
     @IsString()
-    originalUserFileName?: string; // The original name of the file uploaded by the user
+    originalUserFileName?: string; // original name of the file uploaded by the user
 }

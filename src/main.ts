@@ -17,9 +17,7 @@ async function bootstrap() {
     const expressApp = express();
     const app = await NestFactory.create(AppModule, new ExpressAdapter(expressApp));
 
-    // --- Passport Initialization (still needed for JWT strategy) ---
     app.use(passport.initialize());
-    // app.use(passport.session()); // No longer needed if not using sessions
 
     console.log('[Backend] Passport initialized for JWT.');
 
@@ -42,9 +40,9 @@ async function bootstrap() {
                 callback(new Error('Not allowed by CORS'));
             }
         },
-        credentials: true, // Keep true if frontend sends cookies for other reasons, or for future use. For JWT Bearer token, it's not strictly necessary for auth itself.
+        credentials: true,
         methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'], // Ensure 'Authorization' is allowed
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With', 'Accept'],
     });
     console.log('[Backend] CORS configured.');
 
