@@ -1,98 +1,64 @@
-<p align="center">
-  <a href="http://nestjs.com/" target="blank"><img src="https://nestjs.com/img/logo-small.svg" width="120" alt="Nest Logo" /></a>
-</p>
+# Paggo OCR Case Backend
 
-[circleci-image]: https://img.shields.io/circleci/build/github/nestjs/nest/master?token=abc123def456
-[circleci-url]: https://circleci.com/gh/nestjs/nest
+Disclaimer: The initial idea was to develop the whole project in a single repository containing both backend and frontend, which would be the best and most elegant approach. It is also possible to notice this initial idea when looking through the structure of the frontend repository (directory called paggo-monorepo, directory called backend…). Although, due to some problems when deploying it to Vercel and considering the given time to complete this project, the best and fastest solution was to split the project in two repositories, one for the frontend and one for the backend. This is the backend repository.
+The frontend repository can be found at: https://github.com/madeira-dev/paggo-ocr-case/
 
-  <p align="center">A progressive <a href="http://nodejs.org" target="_blank">Node.js</a> framework for building efficient and scalable server-side applications.</p>
-    <p align="center">
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/v/@nestjs/core.svg" alt="NPM Version" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/l/@nestjs/core.svg" alt="Package License" /></a>
-<a href="https://www.npmjs.com/~nestjscore" target="_blank"><img src="https://img.shields.io/npm/dm/@nestjs/common.svg" alt="NPM Downloads" /></a>
-<a href="https://circleci.com/gh/nestjs/nest" target="_blank"><img src="https://img.shields.io/circleci/build/github/nestjs/nest/master" alt="CircleCI" /></a>
-<a href="https://discord.gg/G7Qnnhy" target="_blank"><img src="https://img.shields.io/badge/discord-online-brightgreen.svg" alt="Discord"/></a>
-<a href="https://opencollective.com/nest#backer" target="_blank"><img src="https://opencollective.com/nest/backers/badge.svg" alt="Backers on Open Collective" /></a>
-<a href="https://opencollective.com/nest#sponsor" target="_blank"><img src="https://opencollective.com/nest/sponsors/badge.svg" alt="Sponsors on Open Collective" /></a>
-  <a href="https://paypal.me/kamilmysliwiec" target="_blank"><img src="https://img.shields.io/badge/Donate-PayPal-ff3f59.svg" alt="Donate us"/></a>
-    <a href="https://opencollective.com/nest#sponsor"  target="_blank"><img src="https://img.shields.io/badge/Support%20us-Open%20Collective-41B883.svg" alt="Support us"></a>
-  <a href="https://twitter.com/nestframework" target="_blank"><img src="https://img.shields.io/twitter/follow/nestframework.svg?style=social&label=Follow" alt="Follow us on Twitter"></a>
-</p>
-  <!--[![Backers on Open Collective](https://opencollective.com/nest/backers/badge.svg)](https://opencollective.com/nest#backer)
-  [![Sponsors on Open Collective](https://opencollective.com/nest/sponsors/badge.svg)](https://opencollective.com/nest#sponsor)-->
+As it was already provided, the link to access the deployed project is: https://paggo-ocr-case-ochre.vercel.app
 
-## Description
+### Running the project locally:
 
-[Nest](https://github.com/nestjs/nest) framework TypeScript starter repository.
-
-## Project setup
-
+First, clone each of the repositories:
 ```bash
-$ npm install
+mkdir paggo-technical-case
+cd paggo-technical-case
+# clone frontend project
+git clone https://github.com/madeira-dev/paggo-ocr-case/
+# clone backend project
+git clone https://github.com/madeira-dev/help-nestjs-vercel
 ```
 
-## Compile and run the project
+To run the project locally, a few environment variables must be set for both frontend and the backend.
+For guidance, I will be providing the structure for each file that declares these variables, the only thing that must be done is to fill in the empty variables.
 
+For the frontend, create a file called .env.local in the paggo-ocr-case/paggo-monoreppo/apps/web/ directory.
+This file must contain the following variables:
 ```bash
-# development
-$ npm run start
-
-# watch mode
-$ npm run start:dev
-
-# production mode
-$ npm run start:prod
+<empty>
 ```
 
-## Run tests
-
+For the backend, create a file called .env in the root directory of the backend repository (<>).
+This file must contain the following variables:
 ```bash
-# unit tests
-$ npm run test
-
-# e2e tests
-$ npm run test:e2e
-
-# test coverage
-$ npm run test:cov
+<empty>
 ```
 
-## Deployment
+### Installing dependencies:
+Make sure npm and npx are installed?
 
-When you're ready to deploy your NestJS application to production, there are some key steps you can take to ensure it runs as efficiently as possible. Check out the [deployment documentation](https://docs.nestjs.com/deployment) for more information.
-
-If you are looking for a cloud-based platform to deploy your NestJS application, check out [Mau](https://mau.nestjs.com), our official platform for deploying NestJS applications on AWS. Mau makes deployment straightforward and fast, requiring just a few simple steps:
-
+Frontend:
 ```bash
-$ npm install -g @nestjs/mau
-$ mau deploy
+cd paggo-ocr-case/paggo-monoreppo/apps/web/
+npx pnpm install
 ```
 
-With Mau, you can deploy your application in just a few clicks, allowing you to focus on building features rather than managing infrastructure.
+Backend:
+```bash
+# in the root directory of the backend repository
+npm install
+```
 
-## Resources
+After successfully setting the environment variables and installing dependencies, you must open a terminal window for each project to start them in development mode.
 
-Check out a few resources that may come in handy when working with NestJS:
+For the frontend:
+```bash
+# in paggo-ocr-case/paggo-monoreppo/apps/web/ directory
+npm run dev
+```
 
-- Visit the [NestJS Documentation](https://docs.nestjs.com) to learn more about the framework.
-- For questions and support, please visit our [Discord channel](https://discord.gg/G7Qnnhy).
-- To dive deeper and get more hands-on experience, check out our official video [courses](https://courses.nestjs.com/).
-- Deploy your application to AWS with the help of [NestJS Mau](https://mau.nestjs.com) in just a few clicks.
-- Visualize your application graph and interact with the NestJS application in real-time using [NestJS Devtools](https://devtools.nestjs.com).
-- Need help with your project (part-time to full-time)? Check out our official [enterprise support](https://enterprise.nestjs.com).
-- To stay in the loop and get updates, follow us on [X](https://x.com/nestframework) and [LinkedIn](https://linkedin.com/company/nestjs).
-- Looking for a job, or have a job to offer? Check out our official [Jobs board](https://jobs.nestjs.com).
+For the backend:
+```bash
+# in the root directory of backend repository
+npm run start:dev
+```
 
-## Support
-
-Nest is an MIT-licensed open source project. It can grow thanks to the sponsors and support by the amazing backers. If you'd like to join them, please [read more here](https://docs.nestjs.com/support).
-
-## Stay in touch
-
-- Author - [Kamil Myśliwiec](https://twitter.com/kammysliwiec)
-- Website - [https://nestjs.com](https://nestjs.com/)
-- Twitter - [@nestframework](https://twitter.com/nestframework)
-
-## License
-
-Nest is [MIT licensed](https://github.com/nestjs/nest/blob/master/LICENSE).
+By default, the frontend should start at http://localhost:3001 and the backend at http://localhost:3000. The ports might be different for you so please pay attention at what is printed in the terminal as it tells you where to open each project.
